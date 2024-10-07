@@ -7,119 +7,152 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Task Management App',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const TaskListScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class Task {
+  String name;
+  bool isCompleted;
+  String priority;
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Task({required this.name, this.isCompleted = false, required this.priority});
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class TaskListScreen extends StatefulWidget {
+  const TaskListScreen({super.key});
 
-  void _incrementCounter() {
+  @override
+  _TaskListScreenState createState() => _TaskListScreenState();
+}
+
+class _TaskListScreenState extends State<TaskListScreen> {
+  final List<Task> _tasks = [];
+  final TextEditingController _taskController = TextEditingController();
+  String _selectedPriority = 'Low';
+
+  // Method to add a task
+  void _addTask(String taskName, String priority) {
+    if (taskName.isNotEmpty) {
+      setState(() {
+        _tasks.add(Task(name: taskName, priority: priority));
+        _taskController.clear();
+      });
+    }
+  }
+
+  // Method to toggle task completion
+  void _toggleTaskCompletion(int index) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _tasks[index].isCompleted = !_tasks[index].isCompleted;
     });
+  }
+
+  // Method to remove a task
+  void _deleteTask(int index) {
+    setState(() {
+      _tasks.removeAt(index);
+    });
+  }
+
+  // Sort tasks based on priority (High -> Medium -> Low)
+  List<Task> _getSortedTasks() {
+    List<Task> sortedTasks = List.from(_tasks);
+    sortedTasks.sort((a, b) {
+      const priorityOrder = {'High': 1, 'Medium': 2, 'Low': 3};
+      return priorityOrder[a.priority]!.compareTo(priorityOrder[b.priority]!);
+    });
+    return sortedTasks;
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Task Manager'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+          children: [
+            // Task input and Add button
+            Row(
+              children: [
+                // Text input field for task name
+                Expanded(
+                  child: TextField(
+                    controller: _taskController,
+                    decoration: const InputDecoration(
+                      hintText: 'Enter task name',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Dropdown for priority selection
+                DropdownButton<String>(
+                  value: _selectedPriority,
+                  items: const [
+                    DropdownMenuItem(value: 'Low', child: Text('Low')),
+                    DropdownMenuItem(value: 'Medium', child: Text('Medium')),
+                    DropdownMenuItem(value: 'High', child: Text('High')),
+                  ],
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedPriority = newValue!;
+                    });
+                  },
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () => _addTask(_taskController.text, _selectedPriority),
+                  child: const Text('Add'),
+                ),
+              ],
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            const SizedBox(height: 20),
+            // Task list
+            Expanded(
+              child: _tasks.isEmpty
+                  ? const Center(child: Text('No tasks yet!'))
+                  : ListView.builder(
+                      itemCount: _getSortedTasks().length,
+                      itemBuilder: (context, index) {
+                        final task = _getSortedTasks()[index];
+                        return Card(
+                          child: ListTile(
+                            leading: Checkbox(
+                              value: task.isCompleted,
+                              onChanged: (value) => _toggleTaskCompletion(index),
+                            ),
+                            title: Text(
+                              task.name,
+                              style: TextStyle(
+                                decoration: task.isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : TextDecoration.none,
+                              ),
+                            ),
+                            subtitle: Text('Priority: ${task.priority}'),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () => _deleteTask(index),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
